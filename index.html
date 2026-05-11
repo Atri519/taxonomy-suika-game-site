@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>종속과문강문계 수박게임</title>
+  <title>종속과목강문계 수박게임</title>
   <style>
     :root {
       color-scheme: light;
-      --ink: #172033;
-      --muted: #5d6b82;
-      --line: #ced7e6;
-      --paper: #f4f7fb;
+      --ink: #293047;
+      --muted: #6c7890;
+      --line: #f1c8d9;
+      --paper: #fff7fb;
       --panel: #ffffff;
-      --accent: #e03b4f;
-      --button: #233047;
-      --button-hover: #31415f;
+      --accent: #ff7aa8;
+      --button: #ff7aa8;
+      --button-hover: #f05f94;
     }
 
     * {
@@ -25,7 +25,7 @@
     body {
       margin: 0;
       min-height: 100%;
-      background: var(--paper);
+      background: linear-gradient(180deg, #fff7fb 0%, #f1fbff 52%, #fffaf0 100%);
       color: var(--ink);
       font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
     }
@@ -40,7 +40,7 @@
       width: min(100%, 760px);
       display: grid;
       grid-template-columns: 1fr;
-      gap: 10px;
+      gap: 12px;
     }
 
     .topbar {
@@ -48,7 +48,12 @@
       grid-template-columns: 1fr auto;
       align-items: center;
       gap: 12px;
-      min-height: 48px;
+      min-height: 58px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgb(255 255 255 / 88%);
+      box-shadow: 0 10px 24px rgb(255 122 168 / 14%);
     }
 
     h1 {
@@ -56,6 +61,14 @@
       font-size: 23px;
       line-height: 1.15;
       letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.25;
     }
 
     .actions {
@@ -73,6 +86,7 @@
       color: #ffffff;
       font: 700 23px/1 system-ui, sans-serif;
       cursor: pointer;
+      box-shadow: 0 6px 0 #d84d7b;
     }
 
     button:hover {
@@ -80,7 +94,8 @@
     }
 
     button:active {
-      transform: translateY(1px);
+      transform: translateY(2px);
+      box-shadow: 0 4px 0 #d84d7b;
     }
 
     .stage {
@@ -93,10 +108,10 @@
       width: min(100%, 560px);
       height: auto;
       display: block;
-      border: 1px solid var(--line);
+      border: 2px solid var(--line);
       border-radius: 8px;
       background: #ffffff;
-      box-shadow: 0 16px 36px rgb(32 44 70 / 13%);
+      box-shadow: 0 18px 34px rgb(255 122 168 / 18%);
       touch-action: none;
       user-select: none;
     }
@@ -124,13 +139,16 @@
 <body>
   <main class="app">
     <div class="topbar">
-      <h1>종속과문강문계 수박게임</h1>
+      <div>
+        <h1>종속과목강문계 수박게임</h1>
+        <div class="subtitle">종 → 속 → 과 → 목 → 강 → 문 → 계</div>
+      </div>
       <div class="actions">
         <button id="restartButton" type="button" title="재시작" aria-label="재시작">↻</button>
       </div>
     </div>
     <div class="stage">
-      <canvas id="gameCanvas" width="560" height="760" aria-label="종속과문강문계 수박게임"></canvas>
+      <canvas id="gameCanvas" width="560" height="760" aria-label="종속과목강문계 수박게임"></canvas>
     </div>
   </main>
 
@@ -152,23 +170,31 @@
       const BOARD_BOTTOM = BOARD_TOP + BOARD_HEIGHT;
       const DANGER_LINE = BOARD_TOP + 82;
       const DROP_Y = BOARD_TOP + 34;
-      const GRAVITY = 1580;
-      const WALL_RESTITUTION = 0.18;
-      const FLOOR_RESTITUTION = 0.10;
-      const FRICTION = 0.985;
-      const AIR_DRAG = 0.999;
-      const COLLISION_PASSES = 5;
+      const FIXED_STEP = 1 / 120;
+      const MAX_FRAME_SECONDS = 0.055;
+      const MAX_ACCUMULATED_SECONDS = 0.11;
+      const GRAVITY = 1480;
+      const WALL_RESTITUTION = 0.12;
+      const FLOOR_RESTITUTION = 0.06;
+      const AIR_DAMPING = 0.9985;
+      const GROUND_FRICTION = 0.988;
+      const COLLISION_RESTITUTION = 0.08;
+      const TANGENTIAL_FRICTION = 0.14;
+      const POSITION_CORRECTION = 0.86;
+      const POSITION_SLOP = 0.015;
+      const SETTLE_SPEED = 9;
+      const COLLISION_PASSES = 7;
       const DROP_COOLDOWN = 430;
       const GAME_OVER_SECONDS = 1.35;
 
       const LEVELS = [
-        { label: "종", radius: 18, fill: "#ffd666", outline: "#a86f00", score: 2 },
-        { label: "속", radius: 24, fill: "#ff9d63", outline: "#ae4e19", score: 5 },
-        { label: "과", radius: 31, fill: "#72df8a", outline: "#23753a", score: 11 },
-        { label: "문", radius: 39, fill: "#69c9ff", outline: "#1f6d94", score: 23 },
-        { label: "강", radius: 50, fill: "#4f8ddb", outline: "#244e9c", score: 47 },
-        { label: "문", radius: 63, fill: "#bd8cff", outline: "#6841a8", score: 95 },
-        { label: "계", radius: 79, fill: "#ff718d", outline: "#a22647", score: 191 }
+        { label: "종", radius: 18, fill: "#ffe07a", outline: "#bf7b00", score: 2 },
+        { label: "속", radius: 24, fill: "#ff9fb2", outline: "#bd3f68", score: 5 },
+        { label: "과", radius: 31, fill: "#98e8ae", outline: "#2f8a49", score: 11 },
+        { label: "목", radius: 39, fill: "#7bd8f7", outline: "#2380a0", score: 23 },
+        { label: "강", radius: 50, fill: "#9bb8ff", outline: "#4563b6", score: 47 },
+        { label: "문", radius: 63, fill: "#c9a6ff", outline: "#704aad", score: 95 },
+        { label: "계", radius: 79, fill: "#ff90c5", outline: "#b63870", score: 191 }
       ];
 
       const state = {
@@ -182,6 +208,7 @@
         nextDropAt: 0,
         dangerTime: 0,
         gameOver: false,
+        accumulator: 0,
         lastTime: performance.now()
       };
 
@@ -225,6 +252,7 @@
         state.nextDropAt = 0;
         state.dangerTime = 0;
         state.gameOver = false;
+        state.accumulator = 0;
         state.lastTime = performance.now();
       }
 
@@ -278,7 +306,7 @@
           if (ball.vx < 0) {
             ball.vx = -ball.vx * WALL_RESTITUTION;
           }
-          ball.vy *= FRICTION;
+          ball.vy *= GROUND_FRICTION;
         }
 
         if (ball.x + radius > BOARD_RIGHT) {
@@ -286,7 +314,7 @@
           if (ball.vx > 0) {
             ball.vx = -ball.vx * WALL_RESTITUTION;
           }
-          ball.vy *= FRICTION;
+          ball.vy *= GROUND_FRICTION;
         }
 
         if (ball.y + radius > BOARD_BOTTOM) {
@@ -297,7 +325,7 @@
           if (Math.abs(ball.vy) < 32) {
             ball.vy = 0;
           }
-          ball.vx *= FRICTION;
+          ball.vx *= GROUND_FRICTION;
         }
       }
 
@@ -330,10 +358,10 @@
             additions.push({
               id: state.nextId++,
               level: newLevel,
-              x: ((first.x * secondMass) + (second.x * firstMass)) / (firstMass + secondMass),
-              y: ((first.y * secondMass) + (second.y * firstMass)) / (firstMass + secondMass),
-              vx: (first.vx + second.vx) * 0.35,
-              vy: (first.vy + second.vy) * 0.35,
+              x: ((first.x * firstMass) + (second.x * secondMass)) / (firstMass + secondMass),
+              y: ((first.y * firstMass) + (second.y * secondMass)) / (firstMass + secondMass),
+              vx: ((first.vx * firstMass) + (second.vx * secondMass)) / (firstMass + secondMass) * 0.42,
+              vy: ((first.vy * firstMass) + (second.vy * secondMass)) / (firstMass + secondMass) * 0.42,
               createdAt: now
             });
             removed.add(first.id);
@@ -387,7 +415,7 @@
             const invFirst = 1 / massOf(first);
             const invSecond = 1 / massOf(second);
             const invSum = invFirst + invSecond;
-            const correction = (overlap / invSum) * 0.72;
+            const correction = (Math.max(overlap - POSITION_SLOP, 0) / invSum) * POSITION_CORRECTION;
 
             first.x -= nx * correction * invFirst;
             first.y -= ny * correction * invFirst;
@@ -401,7 +429,7 @@
               continue;
             }
 
-            const impulse = (-(1 + 0.12) * speedAlongNormal) / invSum;
+            const impulse = (-(1 + COLLISION_RESTITUTION) * speedAlongNormal) / invSum;
             const impulseX = impulse * nx;
             const impulseY = impulse * ny;
             first.vx -= impulseX * invFirst;
@@ -416,7 +444,8 @@
               tangentX /= tangentLength;
               tangentY /= tangentLength;
               let frictionImpulse = -((relativeVx * tangentX) + (relativeVy * tangentY)) / invSum;
-              frictionImpulse = Math.max(-impulse * 0.08, Math.min(impulse * 0.08, frictionImpulse));
+              const maxFriction = Math.abs(impulse) * TANGENTIAL_FRICTION;
+              frictionImpulse = Math.max(-maxFriction, Math.min(maxFriction, frictionImpulse));
               first.vx -= frictionImpulse * tangentX * invFirst;
               first.vy -= frictionImpulse * tangentY * invFirst;
               second.vx += frictionImpulse * tangentX * invSecond;
@@ -432,35 +461,51 @@
         });
       }
 
-      function simulate(deltaSeconds, now) {
-        const steps = Math.max(1, Math.min(5, Math.ceil(deltaSeconds / (1 / 120))));
-        const step = deltaSeconds / steps;
+      function settleBall(ball) {
+        const onFloor = ball.y + radiusOf(ball) >= BOARD_BOTTOM - 0.5;
+        if (!onFloor) {
+          return;
+        }
+        if (Math.abs(ball.vy) < SETTLE_SPEED) {
+          ball.vy = 0;
+        }
+        if (Math.abs(ball.vx) < SETTLE_SPEED) {
+          ball.vx = 0;
+        }
+      }
 
-        for (let s = 0; s < steps; s += 1) {
-          for (const ball of state.balls) {
-            ball.vy += GRAVITY * step;
-            ball.x += ball.vx * step;
-            ball.y += ball.vy * step;
-            ball.vx *= AIR_DRAG;
-            ball.vy *= AIR_DRAG;
-            keepInsideBoard(ball);
+      function simulate(step, now) {
+        for (const ball of state.balls) {
+          ball.vy += GRAVITY * step;
+          ball.x += ball.vx * step;
+          ball.y += ball.vy * step;
+          const damping = Math.pow(AIR_DAMPING, step * 60);
+          ball.vx *= damping;
+          ball.vy *= damping;
+          keepInsideBoard(ball);
+        }
+
+        for (let pass = 0; pass < COLLISION_PASSES; pass += 1) {
+          if (mergeTouching(now)) {
+            continue;
           }
-
-          for (let pass = 0; pass < COLLISION_PASSES; pass += 1) {
-            if (mergeTouching(now)) {
-              continue;
-            }
-            resolveCollisions();
-            for (const ball of state.balls) {
-              keepInsideBoard(ball);
-            }
+          resolveCollisions();
+          for (const ball of state.balls) {
+            keepInsideBoard(ball);
           }
         }
 
+        for (const ball of state.balls) {
+          if (ball.y + radiusOf(ball) >= BOARD_BOTTOM - 0.5) {
+            ball.vx *= GROUND_FRICTION;
+          }
+          settleBall(ball);
+        }
+
         if (isOverLine(now)) {
-          state.dangerTime += deltaSeconds;
+          state.dangerTime += step;
         } else {
-          state.dangerTime = Math.max(0, state.dangerTime - (deltaSeconds * 2));
+          state.dangerTime = Math.max(0, state.dangerTime - (step * 2));
         }
 
         if (state.dangerTime >= GAME_OVER_SECONDS) {
@@ -488,7 +533,7 @@
         const data = LEVELS[level];
         const scale = options.scale || 1;
         const radius = data.radius * scale;
-        const fill = options.preview ? "#e8edf5" : data.fill;
+        const fill = options.preview ? "#fff1f7" : data.fill;
 
         const gradient = ctx.createRadialGradient(
           x - radius * 0.35,
@@ -514,7 +559,7 @@
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = "#111827";
+        ctx.fillStyle = "#293047";
         ctx.font = `700 ${Math.max(11, radius * 0.68)}px ${fontStack}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -533,37 +578,45 @@
 
       function drawBackground() {
         ctx.clearRect(0, 0, WIDTH, HEIGHT);
-        ctx.fillStyle = "#f7f9fd";
+        ctx.fillStyle = "#fff7fb";
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-        ctx.fillStyle = "#172033";
-        ctx.font = `700 20px ${fontStack}`;
+        ctx.fillStyle = "#fffdf7";
+        roundedRect(14, 12, WIDTH - 28, HEIGHT - 24, 8);
+        ctx.fill();
+
+        ctx.fillStyle = "#293047";
+        ctx.font = `800 20px ${fontStack}`;
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
-        ctx.fillText("종속과문강문계", BOARD_LEFT, 34);
+        ctx.fillText("종속과목강문계", BOARD_LEFT, 31);
 
-        ctx.fillStyle = "#172033";
+        ctx.fillStyle = "#7a879e";
+        ctx.font = `700 11px ${fontStack}`;
+        ctx.fillText("종 → 속 → 과 → 목 → 강 → 문 → 계", BOARD_LEFT, 54);
+
+        ctx.fillStyle = "#293047";
         ctx.font = `700 18px ${fontStack}`;
         ctx.textAlign = "right";
         ctx.fillText(`점수 ${state.score}`, BOARD_RIGHT, 27);
 
-        ctx.fillStyle = "#66758d";
+        ctx.fillStyle = "#7a879e";
         ctx.font = `700 13px ${fontStack}`;
         ctx.fillText(`최고 ${Math.max(state.best, state.score)}`, BOARD_RIGHT, 52);
 
-        ctx.fillStyle = "#ffffff";
-        ctx.strokeStyle = "#172033";
+        ctx.fillStyle = "#fffefe";
+        ctx.strokeStyle = "#f0b8cd";
         ctx.lineWidth = 3;
         roundedRect(BOARD_LEFT, BOARD_TOP, BOARD_WIDTH, BOARD_HEIGHT, 7);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = "#172033";
+        ctx.fillStyle = "#8fd3e8";
         roundedRect(BOARD_LEFT - 8, BOARD_BOTTOM, BOARD_WIDTH + 16, 9, 4);
         ctx.fill();
 
         ctx.save();
-        ctx.strokeStyle = state.dangerTime > 0 ? "#dc2f43" : "#e25768";
+        ctx.strokeStyle = state.dangerTime > 0 ? "#ff4f7d" : "#ff9fbd";
         ctx.lineWidth = 2;
         ctx.setLineDash([8, 8]);
         ctx.beginPath();
@@ -580,7 +633,7 @@
 
         clampAim();
         ctx.save();
-        ctx.strokeStyle = "#c6cfdd";
+        ctx.strokeStyle = "#f6b5cf";
         ctx.lineWidth = 1;
         ctx.setLineDash([4, 8]);
         ctx.beginPath();
@@ -593,7 +646,7 @@
       }
 
       function drawSideHud() {
-        ctx.fillStyle = "#5d6b82";
+        ctx.fillStyle = "#7a879e";
         ctx.font = `700 12px ${fontStack}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -608,7 +661,7 @@
         for (let i = 0; i < LEVELS.length; i += 1) {
           drawBall(x, y, i, { scale: 0.46 });
           if (i < LEVELS.length - 1) {
-            ctx.fillStyle = "#8090a7";
+            ctx.fillStyle = "#a7b1c4";
             ctx.font = `700 13px ${fontStack}`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
@@ -620,7 +673,7 @@
 
       function drawGameOver() {
         ctx.save();
-        ctx.fillStyle = "rgba(23, 32, 51, 0.82)";
+        ctx.fillStyle = "rgba(41, 48, 71, 0.84)";
         roundedRect(BOARD_LEFT + 42, 286, BOARD_WIDTH - 84, 166, 8);
         ctx.fill();
 
@@ -658,10 +711,16 @@
       }
 
       function frame(now) {
-        const deltaMs = Math.min(34, now - state.lastTime);
+        const deltaSeconds = Math.min(MAX_FRAME_SECONDS, (now - state.lastTime) / 1000);
         state.lastTime = now;
         if (!state.gameOver) {
-          simulate(deltaMs / 1000, now);
+          state.accumulator = Math.min(MAX_ACCUMULATED_SECONDS, state.accumulator + deltaSeconds);
+          while (state.accumulator >= FIXED_STEP) {
+            simulate(FIXED_STEP, now);
+            state.accumulator -= FIXED_STEP;
+          }
+        } else {
+          state.accumulator = 0;
         }
         draw();
         requestAnimationFrame(frame);

@@ -5,7 +5,7 @@ Static HTML classroom game based on the Suika Game format.
 Sequence:
 
 ```text
-종 → 속 → 과 → 문 → 강 → 문 → 계
+종 → 속 → 과 → 목 → 강 → 문 → 계
 ```
 
 GitHub Pages URL after deployment:
